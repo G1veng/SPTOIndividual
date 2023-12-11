@@ -42,6 +42,8 @@
             stepStart = new TextBox();
             stepEnd = new TextBox();
             stepOfStep = new TextBox();
+            label4 = new Label();
+            compareError = new TextBox();
             SuspendLayout();
             // 
             // formsPlot1
@@ -165,11 +167,29 @@
             stepOfStep.TabIndex = 20;
             stepOfStep.KeyPress += textBox_KeyPress;
             // 
+            // label4
+            // 
+            label4.AutoSize = true;
+            label4.Location = new Point(57, 270);
+            label4.Name = "label4";
+            label4.Size = new Size(86, 30);
+            label4.TabIndex = 21;
+            label4.Text = "Погрешность \r\nсравнения:";
+            // 
+            // compareError
+            // 
+            compareError.Location = new Point(173, 277);
+            compareError.Name = "compareError";
+            compareError.Size = new Size(94, 23);
+            compareError.TabIndex = 22;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
+            Controls.Add(compareError);
+            Controls.Add(label4);
             Controls.Add(stepOfStep);
             Controls.Add(stepEnd);
             Controls.Add(stepStart);
@@ -208,5 +228,7 @@
         private TextBox stepStart;
         private TextBox stepEnd;
         private TextBox stepOfStep;
+        private Label label4;
+        private TextBox compareError;
     }
 }
