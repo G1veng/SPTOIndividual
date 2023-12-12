@@ -18,11 +18,11 @@ namespace SPTOIndividual
 
             leftBorder.Text = "1";
             rightBorder.Text = "10";
-            stepStart.Text = "0.000005";
-            stepEnd.Text = "0.5";
+            stepStart.Text = "0,000005";
+            stepEnd.Text = "0,5";
             coefficients.Text = "1 2 3 4";
-            stepOfStep.Text = "0.01";
-            compareError.Text = "0.1";
+            stepOfStep.Text = "0,01";
+            compareError.Text = "0,1";
 
             formsPlot1.Plot.XLabel("Шаг интегрирования");
             formsPlot1.Plot.YLabel("Время выполнения программы, миллисекунды");
