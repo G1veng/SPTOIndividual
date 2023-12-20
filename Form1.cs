@@ -18,7 +18,7 @@ namespace SPTOIndividual
 
             leftBorder.Text = "1";
             rightBorder.Text = "10";
-            stepStart.Text = "0,000005";
+            stepStart.Text = "0,005";
             stepEnd.Text = "0,5";
             coefficients.Text = "1 2 3 4";
             stepOfStep.Text = "0,01";
@@ -33,12 +33,6 @@ namespace SPTOIndividual
             if (Double.Parse(rightBorder.Text) <= Double.Parse(leftBorder.Text))
             {
                 MessageBox.Show("Левая граница диапазона должна быть < правой границы диапазона!");
-                return;
-            }
-            if (Double.Parse(stepStart.Text) < 0.000001 || Double.Parse(stepStart.Text) > 0.5 ||
-                Double.Parse(stepEnd.Text) < 0.000001 || Double.Parse(stepEnd.Text) > 0.5)
-            {
-                MessageBox.Show("Шаг интегрирования должен быть в пределах [0.000001;0.5]");
                 return;
             }
 
@@ -56,7 +50,9 @@ namespace SPTOIndividual
             var repeatAmounts = Math.Ceiling((end - start) / h);
 
             using (FileStream fs = File.Create(filePath))
+            {
                 for (var j = 1; j <= 3; j++)
+                {
                     for (var i = 0; i < repeatAmounts; i++)
                     {
                         var curDegree = Math.Round(start + (i * h), 6);
@@ -76,61 +72,78 @@ namespace SPTOIndividual
                         byte[] commandInfo = new UTF8Encoding(true).GetBytes($"Integral3x {command} >> result.txt{Environment.NewLine}");
                         fs.Write(commandInfo, 0, commandInfo.Length);
                     }
+                }
+            }
 
             var index = 0;
 
             using (FileStream rfs = File.Create(resultFileName))
-            using (FileStream fs = File.Create(oracleFileName))
-                foreach (var command in commands)
-                {                    
-                    var s = Calculate(command.Method, Double.Parse(command.LeftBorder), Double.Parse(command.Eps), Double.Parse(command.RightBorder), command.Coefficients).ToString();
-                    
-                    byte[] commandInfo = new UTF8Encoding(true).GetBytes($"S = {s}{Environment.NewLine}");
-                    fs.Write(commandInfo, 0, commandInfo.Length);
-
-                    var proc = new Process()
+            {
+                using (FileStream fs = File.Create(oracleFileName))
+                {
+                    foreach (var command in commands)
                     {
-                        StartInfo = new ProcessStartInfo()
+                        var s = String.Empty;
+
+                        if (Double.Parse(command.Eps) < 0.000001 || Double.Parse(command.Eps) > 0.5)
                         {
-                            FileName = "Integral3x",
-                            Arguments = execCommands[index],
-                            UseShellExecute = false,
-                            RedirectStandardOutput = true,
-                            RedirectStandardError = true,
-                            CreateNoWindow = true,
-                            StandardOutputEncoding = Encoding.UTF8
+                            s = "Шаг интегрирования должен быть в пределах [0.000001;0.5]";
                         }
-                    };
+                        else
+                        {
+                            s = Calculate(command.Method, Double.Parse(command.LeftBorder), Double.Parse(command.Eps),
+                                Double.Parse(command.RightBorder), command.Coefficients).ToString();
+                        }
+                    
+                        byte[] commandInfo = new UTF8Encoding(true).GetBytes($"S = {s}{Environment.NewLine}");
+                        fs.Write(commandInfo, 0, commandInfo.Length);
 
-                    proc.Start();
-                    var startTime = DateTime.UtcNow;
+                        var proc = new Process()
+                        {
+                            StartInfo = new ProcessStartInfo()
+                            {
+                                FileName = "Integral3x",
+                                Arguments = execCommands[index],
+                                UseShellExecute = false,
+                                RedirectStandardOutput = true,
+                                RedirectStandardError = true,
+                                CreateNoWindow = true,
+                                StandardOutputEncoding = Encoding.UTF8
+                            }
+                        };
 
-                    var result = proc.StandardOutput.ReadLine();
-                    proc.Close();
-                    var endTime = DateTime.UtcNow;
+                        proc.Start();
+                        var startTime = DateTime.UtcNow;
 
-                    chartDots.Add(new ChartDot()
-                    {
-                        Method = command.Method,
-                        Step = Double.Parse(command.Eps),
-                        Time = (endTime - startTime).TotalMilliseconds
-                    });
+                        var result = proc.StandardOutput.ReadLine()?.Replace('.', ',');
+                        proc.Close();
+                        var endTime = DateTime.UtcNow;
 
-                    byte[] resultInfo = new byte[0];
+                        chartDots.Add(new ChartDot()
+                        {
+                            Method = command.Method,
+                            Step = Double.Parse(command.Eps),
+                            Time = (endTime - startTime).TotalMilliseconds
+                        });
 
-                    if (Double.TryParse(result!.Split(' ').ToList().Last(), out var r) && Double.TryParse(s, out var sRes))
-                    {
-                        resultInfo = new UTF8Encoding(true).GetBytes($"initial data - {execCommands[index]}, result - {r + Double.Parse(compareError.Text) > sRes && r - Double.Parse(compareError.Text) < sRes}{Environment.NewLine}");
+                        byte[] resultInfo = new byte[0];
+
+                        if (Double.TryParse(result!.Split(' ').ToList().Last(), out var r) && Double.TryParse(s, out var sRes))
+                        {
+                            resultInfo = new UTF8Encoding(true).GetBytes($"initial data - {execCommands[index]}, result - {r + Double.Parse(compareError.Text) > sRes && r - Double.Parse(compareError.Text) < sRes}{Environment.NewLine}");
+                        }
+                        else
+                        {
+                            resultInfo = new UTF8Encoding(true).GetBytes($"initial data - {execCommands[index]}, result - {s == result}{Environment.NewLine}");
+                        }
+
+                        rfs.Write(resultInfo, 0, resultInfo.Length);
+
+                        index++;
                     }
-                    else
-                    {
-                        resultInfo = new UTF8Encoding(true).GetBytes($"initial data - {execCommands[index]}, result - {s == result}{Environment.NewLine}");
-                    }
 
-                    rfs.Write(resultInfo, 0, resultInfo.Length);
-
-                    index++;
                 }
+            }
 
             formsPlot1.Plot.Clear();
 
